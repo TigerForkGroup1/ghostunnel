@@ -684,22 +684,24 @@ func clientBackendDialer(tlsConfigSource certloader.TLSConfigSource, network, ad
 		config.ServerName = *clientServerName
 	}
 
-	allowedURIs, err := wildcard.CompileList(*clientAllowedURIs)
-	if err != nil {
-		logger.Printf("invalid URI pattern in --verify-uri flag (%s)", err)
-		return nil, err
-	}
+	if !*clientDisableAuth {
+		allowedURIs, err := wildcard.CompileList(*clientAllowedURIs)
+		if err != nil {
+			logger.Printf("invalid URI pattern in --verify-uri flag (%s)", err)
+			return nil, err
+		}
 
-	clientACL := auth.ACL{
-		AllowedCNs:  *clientAllowedCNs,
-		AllowedOUs:  *clientAllowedOUs,
-		AllowedDNSs: *clientAllowedDNSs,
-		AllowedIPs:  *clientAllowedIPs,
-		AllowedURIs: allowedURIs,
-		Logger:      logger,
-	}
+		clientACL := auth.ACL{
+			AllowedCNs:  *clientAllowedCNs,
+			AllowedOUs:  *clientAllowedOUs,
+			AllowedDNSs: *clientAllowedDNSs,
+			AllowedIPs:  *clientAllowedIPs,
+			AllowedURIs: allowedURIs,
+			Logger:      logger,
+		}
 
-	config.VerifyPeerCertificate = clientACL.VerifyPeerCertificateClient
+		config.VerifyPeerCertificate = clientACL.VerifyPeerCertificateClient
+	}
 
 	var dialer Dialer = &net.Dialer{Timeout: *timeoutDuration}
 
