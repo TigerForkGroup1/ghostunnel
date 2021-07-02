@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 
 	certigo "github.com/square/certigo/lib"
 )
@@ -82,7 +83,13 @@ func readX509(path string) ([]*x509.Certificate, error) {
 
 func LoadTrustStore(caBundlePath string) (*x509.CertPool, error) {
 	if caBundlePath == "" {
-		return x509.SystemCertPool()
+		if runtime.GOOS == "windows" {
+			// system root pool is not available on Windows
+			// See https://github.com/golang/go/issues/46287
+			return x509.NewCertPool(), nil
+		} else {
+			return x509.SystemCertPool()
+		}
 	}
 
 	caBundleBytes, err := ioutil.ReadFile(caBundlePath)
